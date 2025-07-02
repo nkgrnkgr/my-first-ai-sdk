@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
-import { type CoreMessage, streamText } from "ai";
+import { type CoreMessage, streamText, tool } from "ai";
+import { z } from "zod";
 
 export const maxDuration = 30;
 
@@ -10,6 +11,15 @@ export async function POST(req: Request) {
     const result = await streamText({
       model: openai.chat("gpt-4o"),
       messages,
+      tools: {
+        showImage: tool({
+          description: "A tool to show an image to the user.",
+          parameters: z.object({
+            url: z.string().describe("The URL of the image to show."),
+            alt: z.string().describe("The alternative text for the image."),
+          }),
+        }),
+      },
     });
 
     return result.toDataStreamResponse();
