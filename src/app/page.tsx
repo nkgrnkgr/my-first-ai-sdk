@@ -37,6 +37,23 @@ export default function Chat() {
                 </div>
               );
             }
+
+            if (
+              part.type === "tool-invocation" &&
+              part.toolInvocation.toolName === "nabeatsu"
+            ) {
+              const { hiragana } = part.toolInvocation.args as {
+                hiragana: string;
+              };
+              return (
+                <div
+                  key={part.toolInvocation.toolCallId}
+                  className="p-4 bg-blue-100 border-2 border-blue-300 rounded-lg"
+                >
+                  <p className="text-2xl font-bold text-blue-800">{hiragana}</p>
+                </div>
+              );
+            }
           })}
         </div>
       ))}

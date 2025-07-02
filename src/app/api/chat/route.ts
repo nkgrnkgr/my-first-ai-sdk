@@ -19,6 +19,17 @@ export async function POST(req: Request) {
             alt: z.string().describe("The alternative text for the image."),
           }),
         }),
+        nabeatsu: tool({
+          description:
+            "When you are given a number, if it is a multiple of 3, you must call this tool. The tool will then render the hiragana reading of the number.",
+          parameters: z.object({
+            hiragana: z
+              .string()
+              .describe(
+                "The hiragana reading of the number that is a multiple of 3."
+              ),
+          }),
+        }),
       },
     });
 
