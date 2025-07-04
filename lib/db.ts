@@ -1,0 +1,49 @@
+import path from "node:path";
+import Database from "better-sqlite3";
+
+const dbPath = path.join(process.cwd(), "audio_uploads.db");
+const db = new Database(dbPath);
+
+// 音声ファイルテーブルの初期化
+db.exec(`
+  CREATE TABLE IF NOT EXISTS audio_files (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    filename TEXT NOT NULL,
+    original_name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    file_size INTEGER NOT NULL,
+    mime_type TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+export interface AudioFile {
+  id: number;
+  filename: string;
+  original_name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string;
+  created_at: string;
+}
+
+export const audioFileQueries = {
+  insert: db.prepare(`
+    INSERT INTO audio_files (filename, original_name, file_path, file_size, mime_type)
+    VALUES (?, ?, ?, ?, ?)
+  `),
+
+  getById: db.prepare(`
+    SELECT * FROM audio_files WHERE id = ?
+  `),
+
+  getAll: db.prepare(`
+    SELECT * FROM audio_files ORDER BY created_at DESC
+  `),
+
+  deleteById: db.prepare(`
+    DELETE FROM audio_files WHERE id = ?
+  `),
+};
+
+export default db;

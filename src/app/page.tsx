@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import AudioRecorder from "@/components/AudioRecorder";
 
 export default function Chat() {
   const { messages, input, handleInputChange, handleSubmit } = useChat({
@@ -10,8 +11,14 @@ export default function Chat() {
     },
   });
 
+  const handleUploadComplete = (fileId: number) => {
+    console.log("音声ファイルがアップロードされました:", fileId);
+  };
+
   return (
     <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch">
+      <AudioRecorder onUploadComplete={handleUploadComplete} />
+
       {messages.map((m) => (
         <div key={m.id} className="whitespace-pre-wrap flex flex-col gap-2">
           <strong>{`${m.role}: `}</strong>
