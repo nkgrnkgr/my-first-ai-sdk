@@ -1,6 +1,7 @@
-import { writeFile, mkdir } from "node:fs/promises";
+// biome-ignore assist/source/organizeImports: <explanation>
+import { type NextRequest, NextResponse } from "next/server";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { NextRequest, NextResponse } from "next/server";
 import { audioFileQueries } from "../../../../lib/db";
 
 export async function POST(request: NextRequest) {
@@ -91,10 +92,10 @@ export async function GET() {
   try {
     console.log("GET /api/upload-audio が呼ばれました");
     const files = audioFileQueries.getAll.all();
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: "API endpoint is working",
       files,
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error("音声ファイル取得エラー:", error);

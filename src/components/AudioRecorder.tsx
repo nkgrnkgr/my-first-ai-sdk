@@ -1,114 +1,81 @@
 "use client";
 
-import { forwardRef, useImperativeHandle } from "react";
-import { useAudioRecorder } from "./useAudioRecorder";
+import { useRef, useState } from "react";
 
-interface AudioRecorderProps {
-  onUploadComplete?: (fileId: number) => void;
-  onRecordingComplete?: () => void;
-}
+// 録音とアップロードを一体化した関数
+export const recordAndUpload = async (
+  onStopCallback?: () => void
+): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    let mediaRecorder: MediaRecorder;
+    const audioChunks: Blob[] = [];
+    let stream: MediaStream;
 
-export interface AudioRecorderRef {
-  startRecording: () => void;
-  stopRecording: () => void;
-}
-
-const AudioRecorder = forwardRef<AudioRecorderRef, AudioRecorderProps>(({
-  onUploadComplete,
-  onRecordingComplete,
-}, ref) => {
-  const {
-    isRecording,
-    isUploading,
-    recordingTime,
-    audioUrl,
-    startRecording,
-    stopRecording,
-    uploadAudio,
-    clearRecording,
-  } = useAudioRecorder(onUploadComplete, onRecordingComplete);
-
-  useImperativeHandle(ref, () => ({
-    startRecording: () => {
-      if (!isRecording) {
-        console.log("チャットから録音開始が要求されました");
-        startRecording();
+    // グローバルに停止関数を公開
+    (window as any).stopRecording = () => {
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+        console.log("手動録音停止");
       }
-    },
-    stopRecording,
-  }));
+    };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((mediaStream) => {
+        stream = mediaStream;
+        mediaRecorder = new MediaRecorder(stream, {
+          mimeType: "audio/webm",
+        });
 
-  return (
-    <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-md border border-gray-300 rounded-lg p-4 bg-white shadow-lg z-10">
-      <h3 className="text-lg font-semibold mb-3">音声録音</h3>
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        };
 
-      <div className="flex items-center gap-4 mb-4">
-        {!isRecording ? (
-          <button
-            type="button"
-            onClick={startRecording}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-          >
-            🎤 録音開始
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={stopRecording}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-          >
-            ⏹️ 録音停止
-          </button>
-        )}
+        mediaRecorder.onstop = async () => {
+          try {
+            const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
 
-        {isRecording && (
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-            <span className="text-red-500 font-mono">
-              {formatTime(recordingTime)}
-            </span>
-          </div>
-        )}
-      </div>
+            // アップロード処理
+            const formData = new FormData();
+            formData.append("audio", audioBlob, "recording.webm");
 
-      {audioUrl && (
-        <div className="mb-4">
-          {/** biome-ignore lint/a11y/useMediaCaption: <explanation> */}
-          <audio controls className="w-full mb-3">
-            <source src={audioUrl} type="audio/webm" />
-            お使いのブラウザは音声再生に対応していません。
-          </audio>
+            const response = await fetch("/api/upload-audio", {
+              method: "POST",
+              body: formData,
+            });
 
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={uploadAudio}
-              disabled={isUploading}
-              className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg"
-            >
-              {isUploading ? "アップロード中..." : "📤 アップロード"}
-            </button>
+            if (!response.ok) {
+              throw new Error("アップロードに失敗しました");
+            }
 
-            <button
-              type="button"
-              onClick={clearRecording}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
-            >
-              🗑️ 削除
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});
+            const result = await response.json();
+            resolve(result.fileId);
+          } catch (error) {
+            reject(error);
+          } finally {
+            // ストリームを停止
+            stream.getTracks().forEach((track) => track.stop());
+            // グローバル関数をクリーンアップ
+            delete (window as any).stopRecording;
+          }
+        };
 
-AudioRecorder.displayName = 'AudioRecorder';
+        // 録音開始
+        mediaRecorder.start();
+        console.log("録音開始");
 
-export default AudioRecorder;
+        // 10秒後に自動停止（デモ用）
+        setTimeout(() => {
+          if (mediaRecorder.state === "recording") {
+            mediaRecorder.stop();
+            console.log("自動録音停止");
+          }
+        }, 10000);
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
+};
