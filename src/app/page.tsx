@@ -1,16 +1,12 @@
 "use client";
 
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 
 // すべてのクライアント機能をdynamic importで分離
 const AudioRecorder = dynamic(() => import("@/components/AudioRecorder"), {
   ssr: false,
-  loading: () => (
-    <div className="border border-gray-300 rounded-lg p-4 mb-4">
-      <h3 className="text-lg font-semibold mb-3">音声録音</h3>
-      <div className="text-gray-500">読み込み中...</div>
-    </div>
-  ),
+  loading: () => null, // 録音UIは最初は非表示なのでローディングも表示しない
 });
 
 const ChatInterface = dynamic(() => import("@/components/ChatInterface"), {
@@ -25,15 +21,52 @@ const ChatInterface = dynamic(() => import("@/components/ChatInterface"), {
   ),
 });
 
+export interface AudioRecorderRef {
+  startRecording: () => void;
+  stopRecording: () => void;
+}
+
 export default function Chat() {
+  const audioRecorderRef = useRef<AudioRecorderRef>(null);
+  const [showRecorder, setShowRecorder] = useState(false);
+
   const handleUploadComplete = (fileId: number) => {
     console.log("音声ファイルがアップロードされました:", fileId);
   };
 
+  const handleRecordingComplete = () => {
+    console.log("録音が完了しました。UIを隠します。");
+    // 録音完了後、UIを隠すかどうかはここで制御可能
+    // setShowRecorder(false); // 完了後にUIを隠す場合
+  };
+
+  const handleStartRecording = () => {
+    console.log("録音UI表示 & 録音開始");
+    setShowRecorder(true);
+    // 少し遅延を入れてコンポーネントがマウントされてから録音開始
+    setTimeout(() => {
+      audioRecorderRef.current?.startRecording();
+    }, 100);
+  };
+
+  const handleStopRecording = () => {
+    audioRecorderRef.current?.stopRecording();
+  };
+
   return (
     <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch">
-      <AudioRecorder onUploadComplete={handleUploadComplete} />
-      <ChatInterface onUploadComplete={handleUploadComplete} />
+      <ChatInterface 
+        onUploadComplete={handleUploadComplete}
+        onStartRecording={handleStartRecording}
+        onStopRecording={handleStopRecording}
+      />
+      {showRecorder && (
+        <AudioRecorder 
+          ref={audioRecorderRef}
+          onUploadComplete={handleUploadComplete}
+          onRecordingComplete={handleRecordingComplete}
+        />
+      )}
     </div>
   );
 }

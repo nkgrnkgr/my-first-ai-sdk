@@ -33,6 +33,7 @@
 - 録音時間の表示とリアルタイム録音状態の表示
 - 録音データの再生・削除・アップロード機能
 - ファイルサイズ制限（10MB）と音声ファイル形式の検証
+- GPT tool calling による録音制御（startRecording/stopRecording ツール）
 
 **環境設定:**
 - `.env.local` に `OPENAI_API_KEY` が必要

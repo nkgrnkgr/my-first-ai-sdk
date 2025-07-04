@@ -12,7 +12,8 @@ interface UseAudioRecorderReturn {
 }
 
 export function useAudioRecorder(
-  onUploadComplete?: (fileId: number) => void
+  onUploadComplete?: (fileId: number) => void,
+  onRecordingComplete?: () => void
 ): UseAudioRecorderReturn {
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -61,6 +62,8 @@ export function useAudioRecorder(
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
+      
+      console.log("録音を開始しました");
     } catch (error) {
       console.error("録音開始エラー:", error);
       alert("マイクへのアクセスを許可してください");
@@ -110,6 +113,7 @@ export function useAudioRecorder(
       if (result.success) {
         alert("音声ファイルがアップロードされました！");
         onUploadComplete?.(result.fileId);
+        onRecordingComplete?.();
 
         // リセット
         setAudioUrl(null);

@@ -1,14 +1,22 @@
 "use client";
 
+import { forwardRef, useImperativeHandle } from "react";
 import { useAudioRecorder } from "./useAudioRecorder";
 
 interface AudioRecorderProps {
   onUploadComplete?: (fileId: number) => void;
+  onRecordingComplete?: () => void;
 }
 
-export default function AudioRecorder({
+export interface AudioRecorderRef {
+  startRecording: () => void;
+  stopRecording: () => void;
+}
+
+const AudioRecorder = forwardRef<AudioRecorderRef, AudioRecorderProps>(({
   onUploadComplete,
-}: AudioRecorderProps) {
+  onRecordingComplete,
+}, ref) => {
   const {
     isRecording,
     isUploading,
@@ -18,7 +26,17 @@ export default function AudioRecorder({
     stopRecording,
     uploadAudio,
     clearRecording,
-  } = useAudioRecorder(onUploadComplete);
+  } = useAudioRecorder(onUploadComplete, onRecordingComplete);
+
+  useImperativeHandle(ref, () => ({
+    startRecording: () => {
+      if (!isRecording) {
+        console.log("チャットから録音開始が要求されました");
+        startRecording();
+      }
+    },
+    stopRecording,
+  }));
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -27,7 +45,7 @@ export default function AudioRecorder({
   };
 
   return (
-    <div className="border border-gray-300 rounded-lg p-4 mb-4">
+    <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-md border border-gray-300 rounded-lg p-4 bg-white shadow-lg z-10">
       <h3 className="text-lg font-semibold mb-3">音声録音</h3>
 
       <div className="flex items-center gap-4 mb-4">
@@ -89,4 +107,8 @@ export default function AudioRecorder({
       )}
     </div>
   );
-}
+});
+
+AudioRecorder.displayName = 'AudioRecorder';
+
+export default AudioRecorder;
