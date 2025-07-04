@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useEffect } from "react";
+import { useEffect, forwardRef, useImperativeHandle } from "react";
 
 interface ChatInterfaceProps {
   onUploadComplete?: (fileId: number) => void;
@@ -9,13 +9,30 @@ interface ChatInterfaceProps {
   onStopRecording?: () => void;
 }
 
-export default function ChatInterface({ onUploadComplete, onStartRecording, onStopRecording }: ChatInterfaceProps) {
-  const { messages, input, handleInputChange, handleSubmit } = useChat({
+export interface ChatInterfaceRef {
+  notifyUploadComplete: (fileId: number) => void;
+}
+
+const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ onUploadComplete, onStartRecording, onStopRecording }, ref) => {
+  const { messages, input, handleInputChange, handleSubmit, append } = useChat({
     api: "/api/chat",
     onError: (err) => {
       console.error(err);
     },
   });
+
+  // 録音アップロード完了をチャットに通知
+  const notifyUploadComplete = (fileId: number) => {
+    append({
+      role: 'user',
+      content: `音声の録音とアップロードが完了しました！音声ファイルが正常に保存されました。`,
+    });
+    onUploadComplete?.(fileId);
+  };
+
+  useImperativeHandle(ref, () => ({
+    notifyUploadComplete,
+  }));
 
   // tool callingの結果を監視して録音制御
   useEffect(() => {
@@ -94,4 +111,8 @@ export default function ChatInterface({ onUploadComplete, onStartRecording, onSt
       </form>
     </>
   );
-}
+});
+
+ChatInterface.displayName = 'ChatInterface';
+
+export default ChatInterface;

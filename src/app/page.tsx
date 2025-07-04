@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import type { ChatInterfaceRef } from "@/components/ChatInterface";
 
 // すべてのクライアント機能をdynamic importで分離
 const AudioRecorder = dynamic(() => import("@/components/AudioRecorder"), {
@@ -28,10 +29,15 @@ export interface AudioRecorderRef {
 
 export default function Chat() {
   const audioRecorderRef = useRef<AudioRecorderRef>(null);
+  const chatInterfaceRef = useRef<ChatInterfaceRef>(null);
   const [showRecorder, setShowRecorder] = useState(false);
 
   const handleUploadComplete = (fileId: number) => {
     console.log("音声ファイルがアップロードされました:", fileId);
+    // チャットに通知
+    chatInterfaceRef.current?.notifyUploadComplete(fileId);
+    // アップロード完了後、録音UIを隠す
+    setShowRecorder(false);
   };
 
   const handleRecordingComplete = () => {
@@ -56,6 +62,7 @@ export default function Chat() {
   return (
     <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch">
       <ChatInterface 
+        ref={chatInterfaceRef}
         onUploadComplete={handleUploadComplete}
         onStartRecording={handleStartRecording}
         onStopRecording={handleStopRecording}
