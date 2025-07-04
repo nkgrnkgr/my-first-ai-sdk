@@ -16,45 +16,6 @@ export default function Chat() {
         <div key={m.id} className="whitespace-pre-wrap flex flex-col gap-2">
           <strong>{`${m.role}: `}</strong>
           {m.content}
-
-          {m.parts?.map((part) => {
-            if (
-              part.type === "tool-invocation" &&
-              part.toolInvocation.toolName === "showImage"
-            ) {
-              const { url, alt } = part.toolInvocation.args as {
-                url: string;
-                alt: string;
-              };
-              return (
-                <div
-                  key={part.toolInvocation.toolCallId}
-                  className="flex flex-col gap-2"
-                >
-                  <p>Here is the image you requested:</p>
-                  {/** biome-ignore lint/performance/noImgElement: <explanation> */}
-                  <img src={url} alt={alt} className="rounded-lg" />
-                </div>
-              );
-            }
-
-            if (
-              part.type === "tool-invocation" &&
-              part.toolInvocation.toolName === "nabeatsu"
-            ) {
-              const { hiragana } = part.toolInvocation.args as {
-                hiragana: string;
-              };
-              return (
-                <div
-                  key={part.toolInvocation.toolCallId}
-                  className="p-4 bg-blue-100 border-2 border-blue-300 rounded-lg"
-                >
-                  <p className="text-2xl font-bold text-blue-800">{hiragana}</p>
-                </div>
-              );
-            }
-          })}
         </div>
       ))}
 

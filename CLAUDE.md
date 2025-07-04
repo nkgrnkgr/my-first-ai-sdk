@@ -16,16 +16,11 @@
 **コア構造:**
 - `src/app/page.tsx` - `@ai-sdk/react` を使用するメインチャットインターフェース
 - `src/app/api/chat/route.ts` - AI レスポンスをストリーミングするための API エンドポイント
-- カスタムツール（showImage、nabeatsu）を含む OpenAI GPT-4o モデルを使用
+- OpenAI GPT-4o モデルを使用したシンプルなチャット機能
 
 **主要な依存関係:**
 - `@ai-sdk/openai` と `ai` - OpenAI 統合のための AI SDK
 - `@ai-sdk/react` - チャット機能のための React hooks
-- `zod` - ツールパラメータのスキーマ検証
-
-**ツール実装:**
-- `showImage` - URL と alt テキストを使用してチャットに画像を表示
-- `nabeatsu` - 3の倍数のひらがな読みを表示する特別なツール
 
 **環境設定:**
 - `.env.local` に `OPENAI_API_KEY` が必要
