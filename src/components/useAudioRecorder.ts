@@ -25,6 +25,11 @@ export function useAudioRecorder(
 
   const startRecording = useCallback(async () => {
     try {
+      // ブラウザ環境でのみ実行
+      if (typeof window === 'undefined' || !navigator.mediaDevices) {
+        throw new Error("このブラウザは音声録音に対応していません");
+      }
+      
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
 
@@ -91,11 +96,16 @@ export function useAudioRecorder(
         body: formData,
       });
 
+      console.log("アップロード応答:", response.status, response.statusText);
+
       if (!response.ok) {
-        throw new Error("アップロードに失敗しました");
+        const errorData = await response.json();
+        console.error("アップロードエラー応答:", errorData);
+        throw new Error(errorData.error || "アップロードに失敗しました");
       }
 
       const result = await response.json();
+      console.log("アップロード成功:", result);
 
       if (result.success) {
         alert("音声ファイルがアップロードされました！");
@@ -117,10 +127,13 @@ export function useAudioRecorder(
   }, [onUploadComplete]);
 
   const clearRecording = useCallback(() => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+    }
     setAudioUrl(null);
     audioChunksRef.current = [];
     setRecordingTime(0);
-  }, []);
+  }, [audioUrl]);
 
   return {
     isRecording,

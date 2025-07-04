@@ -5,17 +5,22 @@ const dbPath = path.join(process.cwd(), "audio_uploads.db");
 const db = new Database(dbPath);
 
 // 音声ファイルテーブルの初期化
-db.exec(`
-  CREATE TABLE IF NOT EXISTS audio_files (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    filename TEXT NOT NULL,
-    original_name TEXT NOT NULL,
-    file_path TEXT NOT NULL,
-    file_size INTEGER NOT NULL,
-    mime_type TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS audio_files (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      filename TEXT NOT NULL,
+      original_name TEXT NOT NULL,
+      file_path TEXT NOT NULL,
+      file_size INTEGER NOT NULL,
+      mime_type TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  console.log("データベーステーブルを初期化しました");
+} catch (error) {
+  console.error("データベース初期化エラー:", error);
+}
 
 export interface AudioFile {
   id: number;

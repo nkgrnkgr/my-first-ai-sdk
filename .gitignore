@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# database files
+*.db
+*.sqlite
+*.sqlite3
+audio_uploads.db
+
+# uploaded files
+/uploads/
+uploads/

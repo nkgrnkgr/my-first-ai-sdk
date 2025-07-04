@@ -1,14 +1,22 @@
-import { writeFile } from "node:fs/promises";
+import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
-import { type NextRequest, NextResponse } from "next/server";
-import { audioFileQueries } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+import { audioFileQueries } from "../../../../lib/db";
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("音声アップロード開始");
     const formData = await request.formData();
     const file = formData.get("audio") as File;
 
+    console.log("受信したファイル情報:", {
+      name: file?.name,
+      size: file?.size,
+      type: file?.type,
+    });
+
     if (!file) {
+      console.log("ファイルが見つかりません");
       return NextResponse.json(
         { error: "音声ファイルが見つかりません" },
         { status: 400 }
@@ -36,7 +44,15 @@ export async function POST(request: NextRequest) {
     const originalName = file.name || "audio_recording";
     const fileExtension = path.extname(originalName) || ".webm";
     const filename = `${timestamp}${fileExtension}`;
-    const filePath = path.join(process.cwd(), "uploads", filename);
+    const uploadsDir = path.join(process.cwd(), "uploads");
+    const filePath = path.join(uploadsDir, filename);
+
+    // uploadsディレクトリが存在しない場合は作成
+    try {
+      await mkdir(uploadsDir, { recursive: true });
+    } catch (error) {
+      console.log("uploadsディレクトリは既に存在します");
+    }
 
     // ファイルの保存
     const bytes = await file.arrayBuffer();
@@ -44,6 +60,7 @@ export async function POST(request: NextRequest) {
     await writeFile(filePath, buffer);
 
     // データベースに記録
+    console.log("データベースに記録開始");
     const result = audioFileQueries.insert.run(
       filename,
       originalName,
@@ -51,6 +68,7 @@ export async function POST(request: NextRequest) {
       file.size,
       file.type
     );
+    console.log("データベース記録完了:", result.lastInsertRowid);
 
     return NextResponse.json({
       success: true,
@@ -71,8 +89,13 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
+    console.log("GET /api/upload-audio が呼ばれました");
     const files = audioFileQueries.getAll.all();
-    return NextResponse.json({ files });
+    return NextResponse.json({ 
+      message: "API endpoint is working",
+      files,
+      timestamp: new Date().toISOString() 
+    });
   } catch (error) {
     console.error("音声ファイル取得エラー:", error);
     return NextResponse.json(
