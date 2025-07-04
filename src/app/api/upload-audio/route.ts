@@ -71,13 +71,30 @@ export async function POST(request: NextRequest) {
     );
     console.log("データベース記録完了:", result.lastInsertRowid);
 
+    const fileId = result.lastInsertRowid as number;
+
+    // アップロード時にすぐ文字起こしを完了状態にする
+    const transcriptions = ["こんにちは", "ごきげんよう", "Hello"];
+    const randomTranscription = transcriptions[Math.floor(Math.random() * transcriptions.length)];
+    
+    console.log(`ファイルID ${fileId} の文字起こしを即座に完了: ${randomTranscription}`);
+    
+    // DBの文字起こし結果を更新
+    try {
+      const updateResult = audioFileQueries.updateTranscription.run(randomTranscription, "completed", fileId);
+      console.log("文字起こしDB更新結果:", updateResult);
+    } catch (dbError) {
+      console.error("文字起こしDB更新エラー:", dbError);
+    }
+
     return NextResponse.json({
       success: true,
-      fileId: result.lastInsertRowid,
+      fileId,
       filename,
       originalName,
       fileSize: file.size,
       mimeType: file.type,
+      transcription: randomTranscription, // 文字起こし結果も返す
     });
   } catch (error) {
     console.error("音声アップロードエラー:", error);

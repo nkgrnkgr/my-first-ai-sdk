@@ -4,7 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface ChatInterfaceProps {
-  onRecordingRequest?: () => Promise<void>;
+  onRecordingRequest?: () => Promise<number>;
 }
 
 const ChatInterface = ({ onRecordingRequest }: ChatInterfaceProps) => {
@@ -23,11 +23,11 @@ const ChatInterface = ({ onRecordingRequest }: ChatInterfaceProps) => {
   const handleRecordingRequest = useCallback(async () => {
     try {
       setIsRecording(true);
-      await onRecordingRequest?.();
+      const fileId = await onRecordingRequest?.();
       // 録音完了後、チャットにメッセージを追加
       append({
         role: "user",
-        content: `音声の録音とアップロードが完了しました！`,
+        content: `音声の録音とアップロードが完了しました！\nファイルID: ${fileId}`,
       });
     } catch (error) {
       console.error("録音処理エラー:", error);
@@ -83,21 +83,85 @@ const ChatInterface = ({ onRecordingRequest }: ChatInterfaceProps) => {
 
           {/* Tool invocationの結果を表示 */}
           {m.parts?.map((part) => {
-            if (
-              part.type === "tool-invocation" &&
-              part.toolInvocation.toolName === "startRecording"
-            ) {
-              return (
-                <div
-                  key={part.toolInvocation.toolCallId}
-                  className="p-3 bg-red-50 border-l-4 border-red-400 rounded"
-                >
-                  <p className="text-red-800 font-semibold">🎤 録音開始</p>
-                  <p className="text-red-600">
-                    {part.toolInvocation.args.message}
-                  </p>
-                </div>
-              );
+            if (part.type === "tool-invocation") {
+              if (part.toolInvocation.toolName === "startRecording") {
+                return (
+                  <div
+                    key={part.toolInvocation.toolCallId}
+                    className="p-3 bg-red-50 border-l-4 border-red-400 rounded"
+                  >
+                    <p className="text-red-800 font-semibold">🎤 録音開始</p>
+                    <p className="text-red-600">
+                      {part.toolInvocation.args.message}
+                    </p>
+                  </div>
+                );
+              } else if (part.toolInvocation.toolName === "getTranscription") {
+                return (
+                  <div
+                    key={part.toolInvocation.toolCallId}
+                    className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded"
+                  >
+                    <p className="text-blue-800 font-semibold">📄 文字起こし取得</p>
+                    <p className="text-blue-600">
+                      ファイルID: {part.toolInvocation.args.fileId}
+                    </p>
+                  </div>
+                );
+              } else if (part.toolInvocation.toolName === "listAudioFiles") {
+                return (
+                  <div
+                    key={part.toolInvocation.toolCallId}
+                    className="p-3 bg-purple-50 border-l-4 border-purple-400 rounded"
+                  >
+                    <p className="text-purple-800 font-semibold">📋 ファイル一覧取得</p>
+                  </div>
+                );
+              }
+            } else if (part.type === "tool-result") {
+              if (part.toolName === "getTranscription") {
+                const result = part.result as any;
+                return (
+                  <div
+                    key={part.toolCallId}
+                    className="p-3 bg-green-50 border-l-4 border-green-400 rounded"
+                  >
+                    <p className="text-green-800 font-semibold">✅ 文字起こし結果</p>
+                    {result.success ? (
+                      <div className="text-green-700">
+                        <p>ファイルID: {result.fileId}</p>
+                        <p>文字起こし: {result.transcription}</p>
+                        <p>ステータス: {result.status}</p>
+                      </div>
+                    ) : (
+                      <p className="text-red-600">エラー: {result.error}</p>
+                    )}
+                  </div>
+                );
+              } else if (part.toolName === "listAudioFiles") {
+                const result = part.result as any;
+                return (
+                  <div
+                    key={part.toolCallId}
+                    className="p-3 bg-purple-50 border-l-4 border-purple-400 rounded"
+                  >
+                    <p className="text-purple-800 font-semibold">📋 ファイル一覧</p>
+                    {result.success ? (
+                      <div className="text-purple-700">
+                        {result.files.map((file: any) => (
+                          <div key={file.fileId} className="border-b border-purple-200 py-2">
+                            <p>ID: {file.fileId} | {file.filename}</p>
+                            <p>文字起こし: {file.transcription || "未完了"}</p>
+                            <p>ステータス: {file.status}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-red-600">エラー: {result.error}</p>
+                    )}
+                  </div>
+                );
+              }
             }
             return null;
           })}

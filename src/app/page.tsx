@@ -16,10 +16,11 @@ const ChatInterface = dynamic(() => import("@/components/ChatInterface"), {
 });
 
 export default function Chat() {
-  const handleRecordingRequest = async (): Promise<void> => {
+  const handleRecordingRequest = async (): Promise<number> => {
     console.log("録音開始リクエスト");
     const fileId = await recordAndUpload();
     console.log("録音完了、ファイルID:", fileId);
+    return fileId;
   };
 
   return (
