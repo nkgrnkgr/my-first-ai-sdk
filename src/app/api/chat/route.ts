@@ -6,29 +6,30 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
-    const { messages }: { messages: CoreMessage[] } = await req.json();
+    const body = await req.text();
+    console.log("Request body:", body);
+
+    if (!body) {
+      throw new Error("Empty request body");
+    }
+
+    const { messages }: { messages: CoreMessage[] } = JSON.parse(body);
 
     const result = await streamText({
       model: openai.chat("gpt-4o"),
       messages,
       tools: {
-        showImage: tool({
-          description: "A tool to show an image to the user.",
-          parameters: z.object({
-            url: z.string().describe("The URL of the image to show."),
-            alt: z.string().describe("The alternative text for the image."),
-          }),
-        }),
-        nabeatsu: tool({
+        startRecording: tool({
           description:
-            "When you are given a number, if it is a multiple of 3, you must call this tool. The tool will then render the hiragana reading of the number.",
+            "ユーザーが音声録音を開始したい時に呼び出すツール。録音開始の指示を出します。",
           parameters: z.object({
-            hiragana: z
+            message: z
               .string()
-              .describe(
-                "The hiragana reading of the number that is a multiple of 3."
-              ),
+              .describe("録音開始時にユーザーに表示するメッセージ"),
           }),
+          execute: async ({ message }) => {
+            return { success: true, message };
+          },
         }),
       },
     });
